@@ -4,14 +4,14 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 class Connect {
-  final client = MqttServerClient('wss://mqtt-dashboard.com', 'clientId-kXcwNN1paJ');
+  final client = MqttServerClient('broker.hivemq.com', '');
   var pongCount = 0;
   Future<int> init() async {
     /// A websocket URL must start with ws:// or wss:// or Dart will throw an exception, consult your websocket MQTT broker
     /// for details.
     /// To use websockets add the following lines -:
-    client.useWebSocket = true;
-    client.port = 8884; // ( or whatever your WS port is)
+    // client.useWebSocket = true;
+    // client.port = 8884; // ( or whatever your WS port is)
     /// There is also an alternate websocket implementation for specialist use, see useAlternateWebSocketImplementation
     /// Note do not set the secure flag if you are using wss, the secure flags is for TCP sockets only.
     /// You can also supply your own websocket protocol list or disable this feature using the websocketProtocols
@@ -21,7 +21,7 @@ class Connect {
     /// Set logging on if needed, defaults to off
     client.logging(on: true);
 
-    /// Set the correct MQTT protocol for mosquito
+    /// Set the correct MQTT protocol for mosquito == broker
     client.setProtocolV311();
 
     /// If you intend to use a keep alive you must set it here otherwise keep alive will be disabled.
