@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_mqtt_app/app/domain/mqtt_usecase.dart';
 import 'package:flutter_mqtt_app/app/features/home/cubit/home_cubit.dart';
 import 'package:flutter_mqtt_app/app/features/home/presentation/add_topic_subscribe_dialog.dart';
 import 'package:flutter_mqtt_app/app/features/home/state/home_state.dart';
@@ -17,6 +16,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late bool _isDarkMode;
+  final hostController = TextEditingController();
+  final portController = TextEditingController();
+  final formHostKey = GlobalKey<FormState>();
 
   @override
   initState() {
@@ -24,6 +26,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool isDarkMode(context) => Theme.of(context).brightness == Brightness.dark;
+  HomeCubit get cubit => context.read<HomeCubit>();
 
   void changeThemeMode() {
     setState(() {
@@ -59,76 +62,115 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              "message",
+              "Message",
               textAlign: TextAlign.start,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
             Expanded(
                 child: Container(
               child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    MessageItemView(
-                      message: 'Hi test...!',
-                      topic: 'tpics/1',
-                    )
-                  ],
-                ),
+                child: BlocBuilder<HomeCubit, HomeState>(
+                    buildWhen: (previous, current) => (current is InitialState ||
+                        current is NewMessageReceivedState ||
+                        current is ConnectedState ||
+                        current is DisconnectedState),
+                    builder: (context, state) {
+                      if (state is NewMessageReceivedState) {
+                        return Column(
+                          children: [
+                            ...(state).messages.map((msg) => MessageItemView(
+                                  message: msg.message,
+                                  topic: msg.topic,
+                                )),
+                          ],
+                        );
+                      } else {
+                        return const Text('No Message at this moment');
+                      }
+                    }),
               ),
             )),
-            BlocBuilder<HomeCubit, HomeState>(builder: (context, state) {
-              return Column(
-                children: [
-                  Form(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 44,
-                              child: AppTextField(
-                                hintText: 'Input Host',
+            BlocBuilder<HomeCubit, HomeState>(
+                buildWhen: (previous, current) => (current is InitialState ||
+                    current is ConnectingState ||
+                    current is ConnectedState ||
+                    current is DisconnectedState),
+                builder: (context, state) {
+                  return Column(
+                    children: [
+                      Form(
+                        key: formHostKey,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 100,
+                                  child: AppTextField(
+                                    hintText: 'Input Host',
+                                    controller: hostController,
+                                    readOnly: state is ConnectedState,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty || value.trim().isEmpty) {
+                                        return 'Host tidak boleh kosong.';
+                                      }
+
+                                      return null;
+                                    },
+                                  ),
+                                ),
                               ),
-                            ),
+                              Container(
+                                height: 100,
+                                constraints: const BoxConstraints(minWidth: 60, maxWidth: 80),
+                                child: AppTextField(
+                                  hintText: 'Port',
+                                  controller: portController,
+                                  readOnly: state is ConnectedState,
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final isValid = formHostKey.currentState!.validate();
+                                  if (!isValid) return;
+
+                                  (state is ConnectedState)
+                                      ? context.read<HomeCubit>().disconnectToBroker()
+                                      : context.read<HomeCubit>().connectToBroker(hostController.text,
+                                          portController.text.isNotEmpty ? int.parse(portController.text) : null);
+                                },
+                                child: (state is ConnectedState) ? Icon(Icons.link_off) : Icon(Icons.link),
+                              ),
+                            ],
                           ),
-                          SizedBox(
-                            height: 44,
-                            width: 100,
-                            child: AppTextField(
-                              hintText: '1334',
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              (state is ConectedState)
-                                  ? context.read<HomeCubit>().disconnectToBroker()
-                                  : context.read<HomeCubit>().connectToBroker();
-                            },
-                            child: (state is ConectedState) ? Icon(Icons.link_off) : Icon(Icons.link),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  if (state is ConectedState)
-                    ElevatedButton(onPressed: () => _openDialog(context), child: Text('Add new topic subscription')),
-                ],
-              );
-            }),
+                      if (state is ConnectedState)
+                        ElevatedButton(
+                            onPressed: () => _openDialog(context), child: Text('Add new topic subscription')),
+                    ],
+                  );
+                }),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _openDialog(BuildContext context) {
-    return showDialog<void>(
+  Future<void> _openDialog(BuildContext context) async {
+    final topic = await showDialog<String?>(
       context: context,
       builder: (BuildContext context) {
         return AddTopicSubscribeDialog();
       },
     );
+
+    if (topic == null || topic.isEmpty) return;
+
+    context.read<HomeCubit>().subscribeNewTopic(topic);
   }
 }
 

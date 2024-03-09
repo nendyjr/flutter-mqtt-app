@@ -1,17 +1,45 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+//broker.hivemq.com
+//flutter_mqtt/testtopic
 
-class Connect {
-  final client = MqttServerClient('broker.hivemq.com', '');
+class ClientConnect {
+  ClientConnect({
+    required this.host,
+    this.port,
+    required this.onListen,
+    required this.onDisconnected,
+    required this.onConnected,
+    required this.onSubscribed,
+    required this.onSubscribeFail,
+    required this.onUnsubscribed,
+  }) {
+    client = MqttServerClient(host, 'clientId-kXcwNN1paJ');
+    onInit();
+  }
+
+  final String host;
+  final int? port;
+  late final MqttServerClient client;
+  final Function(List<MqttReceivedMessage<MqttMessage?>>) onListen;
+  final VoidCallback onDisconnected;
+  final VoidCallback onConnected;
+  final Function(String) onSubscribed;
+  final Function(String) onSubscribeFail;
+  final Function(String?) onUnsubscribed;
+
   var pongCount = 0;
-  Future<int> init() async {
+
+  Future<void> onInit() async {
     /// A websocket URL must start with ws:// or wss:// or Dart will throw an exception, consult your websocket MQTT broker
     /// for details.
     /// To use websockets add the following lines -:
     // client.useWebSocket = true;
-    // client.port = 8884; // ( or whatever your WS port is)
+    if (port != null) client.port = port!;
+
     /// There is also an alternate websocket implementation for specialist use, see useAlternateWebSocketImplementation
     /// Note do not set the secure flag if you are using wss, the secure flags is for TCP sockets only.
     /// You can also supply your own websocket protocol list or disable this feature using the websocketProtocols
@@ -42,6 +70,8 @@ class Connect {
     /// can fail either because you have tried to subscribe to an invalid topic or the broker
     /// rejects the subscribe request.
     client.onSubscribed = onSubscribed;
+    client.onSubscribeFail = onSubscribeFail;
+    client.onUnsubscribed = onUnsubscribed;
 
     /// Set a ping received callback if needed, called whenever a ping response(pong) is received
     /// from the broker.
@@ -62,8 +92,71 @@ class Connect {
     /// Connect the client, any errors here are communicated by raising of the appropriate exception. Note
     /// in some circumstances the broker will just disconnect us, see the spec about this, we however will
     /// never send malformed messages.
+    // await connect();
+
+    /// Ok, lets try a subscription
+    // print('EXAMPLE::Subscribing to the test/lol topic');
+    // const topic = 'test/lol'; // Not a wildcard topic
+    // client.subscribe(topic, MqttQos.atMostOnce);
+
+    /// The client has a change notifier object(see the Observable class) which we then listen to to get
+    /// notifications of published updates to each subscribed topic.
+    /// In general you should listen here as soon as possible after connecting, you will not receive any
+    /// publish messages until you do this.
+    /// Also you must re-listen after disconnecting.
+
+    /// Lets publish to our topic
+    /// Use the payload builder rather than a raw buffer
+    /// Our known topic to publish to
+    // subscribeNewTopic();
+
+    /// Publish it
+
+    /// Ok, we will now sleep a while, in this gap you will see ping request/response
+    /// messages being exchanged by the keep alive mechanism.
+    // print('EXAMPLE::Sleeping....');
+    // await MqttUtilities.asyncSleep(60);
+
+    /// Finally, unsubscribe and exit gracefully
+    // print('EXAMPLE::Unsubscribing');
+
+    /// Wait for the unsubscribe message from the broker if you wish.
+    // await MqttUtilities.asyncSleep(2);
+
+    // return 0;
+  }
+
+  Subscription? subscribeNewTopic(String topic) {
+    /// Subscribe to it
+    print('EXAMPLE::Subscribing to the Dart/Mqtt_client/testtopic topic');
+    return client.subscribe(topic, MqttQos.exactlyOnce);
+  }
+
+  void unsubscribeTopic() {
+    const topic = 'test/lol';
+    client.unsubscribe(topic);
+  }
+
+  void publishMessageToTopic() {
+    const pubTopic = 'flutter_mqtt/testtopic';
+    final builder = MqttClientPayloadBuilder();
+    builder.addString('Hello from mqtt_client');
+    print('EXAMPLE::Publishing our topic');
+    client.publishMessage(pubTopic, MqttQos.exactlyOnce, builder.payload!);
+  }
+
+  Future<void> connect() async {
     try {
       await client.connect();
+      client.updates?.listen(onListen);
+
+      /// If needed you can listen for published messages that have completed the publishing
+      /// handshake which is Qos dependant. Any message received on this stream has completed its
+      /// publishing handshake with the broker.
+      client.published?.listen((MqttPublishMessage message) {
+        print(
+            'EXAMPLE::Published notification:: topic is ${message.variableHeader!.topicName}, with Qos ${message.header!.qos}');
+      });
     } on NoConnectionException catch (e) {
       // Raised by the client when connection fails.
       print('EXAMPLE::client exception - $e');
@@ -81,96 +174,12 @@ class Connect {
       /// Use status here rather than state if you also want the broker return code.
       print('EXAMPLE::ERROR Mosquitto client connection failed - disconnecting, status is ${client.connectionStatus}');
       client.disconnect();
-      exit(-1);
     }
+  }
 
-    /// Ok, lets try a subscription
-    print('EXAMPLE::Subscribing to the test/lol topic');
-    const topic = 'test/lol'; // Not a wildcard topic
-    client.subscribe(topic, MqttQos.atMostOnce);
-
-    /// The client has a change notifier object(see the Observable class) which we then listen to to get
-    /// notifications of published updates to each subscribed topic.
-    /// In general you should listen here as soon as possible after connecting, you will not receive any
-    /// publish messages until you do this.
-    /// Also you must re-listen after disconnecting.
-    client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      final recMess = c![0].payload as MqttPublishMessage;
-      final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-
-      /// The above may seem a little convoluted for users only interested in the
-      /// payload, some users however may be interested in the received publish message,
-      /// lets not constrain ourselves yet until the package has been in the wild
-      /// for a while.
-      /// The payload is a byte buffer, this will be specific to the topic
-      print('EXAMPLE::Change notification:: topic is <${c[0].topic}>, payload is <-- $pt -->');
-      print('');
-    });
-
-    /// If needed you can listen for published messages that have completed the publishing
-    /// handshake which is Qos dependant. Any message received on this stream has completed its
-    /// publishing handshake with the broker.
-    client.published!.listen((MqttPublishMessage message) {
-      print(
-          'EXAMPLE::Published notification:: topic is ${message.variableHeader!.topicName}, with Qos ${message.header!.qos}');
-    });
-
-    /// Lets publish to our topic
-    /// Use the payload builder rather than a raw buffer
-    /// Our known topic to publish to
-    const pubTopic = 'Dart/Mqtt_client/testtopic';
-    final builder = MqttClientPayloadBuilder();
-    builder.addString('Hello from mqtt_client');
-
-    /// Subscribe to it
-    print('EXAMPLE::Subscribing to the Dart/Mqtt_client/testtopic topic');
-    client.subscribe(pubTopic, MqttQos.exactlyOnce);
-
-    /// Publish it
-    print('EXAMPLE::Publishing our topic');
-    client.publishMessage(pubTopic, MqttQos.exactlyOnce, builder.payload!);
-
-    /// Ok, we will now sleep a while, in this gap you will see ping request/response
-    /// messages being exchanged by the keep alive mechanism.
-    print('EXAMPLE::Sleeping....');
-    await MqttUtilities.asyncSleep(60);
-
-    /// Finally, unsubscribe and exit gracefully
-    print('EXAMPLE::Unsubscribing');
-    client.unsubscribe(topic);
-
-    /// Wait for the unsubscribe message from the broker if you wish.
-    await MqttUtilities.asyncSleep(2);
+  void disconnect() {
     print('EXAMPLE::Disconnecting');
     client.disconnect();
-    print('EXAMPLE::Exiting normally');
-    return 0;
-  }
-
-  /// The subscribed callback
-  void onSubscribed(String topic) {
-    print('EXAMPLE::Subscription confirmed for topic $topic');
-  }
-
-  /// The unsolicited disconnect callback
-  void onDisconnected() {
-    print('EXAMPLE::OnDisconnected client callback - Client disconnection');
-    if (client.connectionStatus!.disconnectionOrigin == MqttDisconnectionOrigin.solicited) {
-      print('EXAMPLE::OnDisconnected callback is solicited, this is correct');
-    } else {
-      print('EXAMPLE::OnDisconnected callback is unsolicited or none, this is incorrect - exiting');
-      exit(-1);
-    }
-    if (pongCount == 3) {
-      print('EXAMPLE:: Pong count is correct');
-    } else {
-      print('EXAMPLE:: Pong count is incorrect, expected 3. actual $pongCount');
-    }
-  }
-
-  /// The successful connect callback
-  void onConnected() {
-    print('EXAMPLE::OnConnected client callback - Client connection was successful');
   }
 
   /// Pong callback

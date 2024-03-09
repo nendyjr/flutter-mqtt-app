@@ -1,10 +1,23 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_mqtt_app/app/features/home/models/Receive_message.dart';
 
 abstract class HomeState extends Equatable {}
 
 class InitialState extends HomeState {
   @override
   List<Object> get props => [];
+}
+
+class MqttConnectionState extends HomeState {
+  MqttConnectionState({required this.isConnected, this.error, required this.isLoading});
+
+  final bool isConnected;
+  final bool isLoading;
+  final String? error;
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [];
 }
 
 class DisconnectedState extends HomeState {
@@ -17,7 +30,7 @@ class ConnectingState extends HomeState {
   List<Object?> get props => [];
 }
 
-class ConectedState extends HomeState {
+class ConnectedState extends HomeState {
   @override
   List<Object?> get props => [];
 }
@@ -25,6 +38,22 @@ class ConectedState extends HomeState {
 class NewSubscribedState extends HomeState {
   @override
   List<Object?> get props => [];
+}
+
+class NewMessageReceivingState extends HomeState {
+  NewMessageReceivingState({required this.messages});
+  final List<ReceiveMessage> messages;
+
+  @override
+  List<Object?> get props => [messages];
+}
+
+class NewMessageReceivedState extends HomeState {
+  NewMessageReceivedState({required this.messages});
+  final List<ReceiveMessage> messages;
+
+  @override
+  List<Object?> get props => [messages];
 }
 
 class errorState extends HomeState {
