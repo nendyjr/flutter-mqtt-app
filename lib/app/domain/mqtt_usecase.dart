@@ -16,6 +16,7 @@ class ClientConnect {
     required this.onSubscribed,
     required this.onSubscribeFail,
     required this.onUnsubscribed,
+    required this.clientId,
   }) {
     client = MqttServerClient(host, 'clientId-kXcwNN1paJ');
     onInit();
@@ -23,6 +24,7 @@ class ClientConnect {
 
   final String host;
   final int? port;
+  final String clientId;
   late final MqttServerClient client;
   final Function(List<MqttReceivedMessage<MqttMessage?>>) onListen;
   final VoidCallback onDisconnected;
@@ -132,8 +134,7 @@ class ClientConnect {
     return client.subscribe(topic, MqttQos.exactlyOnce);
   }
 
-  void unsubscribeTopic() {
-    const topic = 'test/lol';
+  void unsubscribeTopic(String topic) {
     client.unsubscribe(topic);
   }
 

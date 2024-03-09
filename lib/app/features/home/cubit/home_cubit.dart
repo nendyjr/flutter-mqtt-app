@@ -13,12 +13,13 @@ class HomeCubit extends Cubit<HomeState> {
 
   List<ReceiveMessage> messages = [];
 
-  Future<void> connectToBroker(String host, int? port) async {
+  Future<void> connectToBroker(String host, int? port, String clientId) async {
     assert(host.isNotEmpty);
 
     client = ClientConnect(
       host: host,
       port: port,
+      clientId: clientId,
       onListen: onListen,
       onConnected: onConnected,
       onDisconnected: onDisconnected,
@@ -49,6 +50,8 @@ class HomeCubit extends Cubit<HomeState> {
   void onSubscribed(String topic) {
     print('EXAMPLE::Subscription confirmed for topic $topic');
     topics.add(topic);
+
+    emit(TopicSubscribed());
   }
 
   void onSubscribeFail(String topic) {
@@ -57,6 +60,8 @@ class HomeCubit extends Cubit<HomeState> {
 
   void onUnsubscribed(String? topic) {
     print('EXAMPLE::Unsubscription confirmed for topic $topic');
+    topics.remove(topic);
+    emit(TopicUnSubscribed());
   }
 
   /// The unsolicited disconnect callback
@@ -69,12 +74,21 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     client = null;
+
+    topics.clear();
+
     emit(DisconnectedState());
+  }
+
+  void unsubscribedTopic(String topic) {
+    client?.unsubscribeTopic(topic);
   }
 
   /// The successful connect callback
   void onConnected() {
     print('EXAMPLE::OnConnected client callback - Client connection was successful');
+    messages.clear();
+    topics.clear();
 
     emit(ConnectedState());
   }

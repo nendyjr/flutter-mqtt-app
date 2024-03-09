@@ -16,7 +16,6 @@ class MqttConnectionState extends HomeState {
   final String? error;
 
   @override
-  // TODO: implement props
   List<Object?> get props => [];
 }
 
@@ -57,6 +56,33 @@ class NewMessageReceivedState extends HomeState {
 }
 
 class errorState extends HomeState {
+  errorState({required this.error});
+  final String error;
+
   @override
+  List<Object?> get props => [];
+}
+
+class TopicSubscribed extends HomeState {
+  @override
+  // TODO: implement props
+  List<Object?> get props => [];
+}
+
+class TopicSubscribe extends HomeState {
+  @override
+  // TODO: implement props
+  List<Object?> get props => [];
+}
+
+class TopicUnSubscribe extends HomeState {
+  @override
+  // TODO: implement props
+  List<Object?> get props => [];
+}
+
+class TopicUnSubscribed extends HomeState {
+  @override
+  // TODO: implement props
   List<Object?> get props => [];
 }
