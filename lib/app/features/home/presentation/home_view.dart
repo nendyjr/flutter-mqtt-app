@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: ElevatedButton.styleFrom(
                 elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.0)),
-                maximumSize: Size(65, 40), //////// HERE
+                maximumSize: const Size(65, 40), //////// HERE
               ),
               onPressed: () => changeThemeMode(),
               child: Icon(isDarkMode(context) ? Icons.light_mode : Icons.dark_mode),
@@ -63,14 +63,41 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              "Message",
-              textAlign: TextAlign.start,
-              style: Theme.of(context).textTheme.headlineMedium,
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 8),
+                Text(
+                  "Message",
+                  textAlign: TextAlign.start,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const Spacer(),
+                BlocBuilder<HomeCubit, HomeState>(
+                    buildWhen: (previous, current) => (current is InitialState ||
+                        current is ConnectingState ||
+                        current is ConnectedState ||
+                        current is DisconnectedState),
+                    builder: (context, state) {
+                      return Container(
+                          height: 20,
+                          width: 20,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: state is ConnectingState
+                                ? Colors.grey
+                                : state is ConnectedState
+                                    ? Colors.green
+                                    : Colors.grey,
+                          ));
+                    }),
+                const SizedBox(width: 8),
+              ],
             ),
             Expanded(
                 child: Container(
-              margin: EdgeInsets.symmetric(vertical: 16),
+              margin: const EdgeInsets.symmetric(vertical: 8),
               color: Colors.grey,
               child: SingleChildScrollView(
                 child: BlocBuilder<HomeCubit, HomeState>(
@@ -89,7 +116,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           ],
                         );
                       } else {
-                        return const Text('No Message at this moment');
+                        return const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('No Message at this moment'),
+                        );
                       }
                     }),
               ),
@@ -99,14 +129,32 @@ class _MyHomePageState extends State<MyHomePage> {
                     current is ConnectedState ||
                     current is DisconnectedState ||
                     current is TopicSubscribed ||
-                    current is TopicUnSubscribed,
+                    current is TopicUnSubscribed ||
+                    current is ErrorState,
                 listener: (context, state) {
+                  var message = '';
+                  var color = Colors.green;
+                  if (state is ConnectedState) {
+                    message = 'You are connected with the host';
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  } else if (state is DisconnectedState) {
+                    message = 'You are disconected with the host';
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  } else if (state is TopicSubscribed) {
+                    message = 'Subscribe is succesfully';
+                  } else if (state is TopicUnSubscribed) {
+                    message = 'Unsubscribe is succesfully';
+                  } else if (state is ErrorState) {
+                    message = state.error;
+                    color = Colors.red;
+                  }
+
                   final snackBar = SnackBar(
-                    content: Text('Yay! A SnackBar!'),
-                    backgroundColor: Colors.green,
+                    content: Text(message),
+                    backgroundColor: color,
                     dismissDirection: DismissDirection.up,
                     behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height - 150, left: 10, right: 10),
+                    margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height - 50, left: 10, right: 10),
                   );
 
                   ScaffoldMessenger.of(context).showSnackBar(snackBar);
@@ -139,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child: AppTextField(
                                         hintText: 'Host (required)',
                                         controller: hostController,
-                                        readOnly: state is ConnectedState,
+                                        readOnly: state is ConnectedState || state is ConnectingState,
                                         validator: (value) {
                                           if (value == null || value.isEmpty || value.trim().isEmpty) {
                                             return 'Please fill host field.';
@@ -156,7 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     child: AppTextField(
                                       hintText: 'Port',
                                       controller: portController,
-                                      readOnly: state is ConnectedState,
+                                      readOnly: state is ConnectedState || state is ConnectingState,
                                     ),
                                   ),
                                 ],
@@ -168,24 +216,35 @@ class _MyHomePageState extends State<MyHomePage> {
                                     child: AppTextField(
                                       hintText: 'Client Id',
                                       controller: clientIdController,
-                                      readOnly: state is ConnectedState,
+                                      readOnly: state is ConnectedState || state is ConnectingState,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   ElevatedButton(
-                                    onPressed: () {
-                                      final isValid = formHostKey.currentState!.validate();
-                                      if (!isValid) return;
+                                    onPressed: state is ConnectingState
+                                        ? null
+                                        : () {
+                                            final isValid = formHostKey.currentState!.validate();
+                                            if (!isValid) return;
 
-                                      (state is ConnectedState)
-                                          ? context.read<HomeCubit>().disconnectToBroker()
-                                          : context.read<HomeCubit>().connectToBroker(
-                                                hostController.text,
-                                                portController.text.isNotEmpty ? int.parse(portController.text) : null,
-                                                clientIdController.text,
-                                              );
-                                    },
-                                    child: (state is ConnectedState) ? Icon(Icons.link_off) : Icon(Icons.link),
+                                            (state is ConnectedState)
+                                                ? context.read<HomeCubit>().disconnectToBroker()
+                                                : context.read<HomeCubit>().connectToBroker(
+                                                      hostController.text,
+                                                      portController.text.isNotEmpty
+                                                          ? int.parse(portController.text)
+                                                          : null,
+                                                      clientIdController.text,
+                                                    );
+                                          },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: state is ConnectedState ? Colors.red : Colors.green,
+                                    ),
+                                    child: (state is ConnectedState)
+                                        ? const Icon(Icons.link_off, color: Colors.white)
+                                        : (state is ConnectingState)
+                                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator())
+                                            : const Icon(Icons.link, color: Colors.white),
                                   ),
                                 ],
                               ),
@@ -201,11 +260,12 @@ class _MyHomePageState extends State<MyHomePage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               ElevatedButton(
-                                  onPressed: () => _openDialog(context), child: Text('Add new topic subscription')),
+                                  onPressed: () => _openDialog(context),
+                                  child: const Text('Add new topic subscription')),
                               const SizedBox(width: 16),
                               ElevatedButton(
                                   onPressed: () => _openTopicsBottomSheet(context, context.read<HomeCubit>().topics),
-                                  child: Icon(Icons.list)),
+                                  child: const Icon(Icons.list)),
                             ],
                           ),
                         ),

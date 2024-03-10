@@ -56,6 +56,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   void onSubscribeFail(String topic) {
     print('EXAMPLE::Subscription failed for topic $topic');
+    emit(ErrorState(error: 'Subscribe failed'));
   }
 
   void onUnsubscribed(String? topic) {
@@ -69,15 +70,15 @@ class HomeCubit extends Cubit<HomeState> {
     print('EXAMPLE::OnDisconnected client callback - Client disconnection');
     if (client?.client.connectionStatus!.disconnectionOrigin == MqttDisconnectionOrigin.solicited) {
       print('EXAMPLE::OnDisconnected callback is solicited, this is correct');
+      emit(DisconnectedState());
     } else {
       print('EXAMPLE::OnDisconnected callback is unsolicited or none, this is incorrect - exiting');
+      emit(ErrorState(error: 'You are disconected from the host'));
     }
 
     client = null;
 
     topics.clear();
-
-    emit(DisconnectedState());
   }
 
   void unsubscribedTopic(String topic) {

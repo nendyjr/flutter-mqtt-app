@@ -55,8 +55,8 @@ class NewMessageReceivedState extends HomeState {
   List<Object?> get props => [messages];
 }
 
-class errorState extends HomeState {
-  errorState({required this.error});
+class ErrorState extends HomeState {
+  ErrorState({required this.error});
   final String error;
 
   @override
@@ -65,24 +65,20 @@ class errorState extends HomeState {
 
 class TopicSubscribed extends HomeState {
   @override
-  // TODO: implement props
   List<Object?> get props => [];
 }
 
 class TopicSubscribe extends HomeState {
   @override
-  // TODO: implement props
   List<Object?> get props => [];
 }
 
 class TopicUnSubscribe extends HomeState {
   @override
-  // TODO: implement props
   List<Object?> get props => [];
 }
 
 class TopicUnSubscribed extends HomeState {
   @override
-  // TODO: implement props
   List<Object?> get props => [];
 }
