@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_mqtt_app/app/domain/mqtt_usecase.dart';
 import 'package:flutter_mqtt_app/app/features/home/cubit/home_cubit.dart';
 import 'package:flutter_mqtt_app/app/features/home/presentation/home_view.dart';
 
@@ -10,6 +9,7 @@ class MqttApp extends StatefulWidget {
   @override
   State<MqttApp> createState() => _MqttAppState();
 
+  // ignore: library_private_types_in_public_api
   static _MqttAppState of(BuildContext context) => context.findAncestorStateOfType<_MqttAppState>()!;
 }
 

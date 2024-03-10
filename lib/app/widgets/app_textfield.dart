@@ -24,7 +24,7 @@ class AppTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
         hintText: hintText,
         contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         counterText: '',

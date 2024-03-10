@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_mqtt_app/app/features/home/cubit/home_cubit.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_mqtt_app/app/features/home/presentation/add_topic_subscr
 import 'package:flutter_mqtt_app/app/features/home/presentation/list_topic_subscribed_sheet.dart';
 import 'package:flutter_mqtt_app/app/features/home/state/home_state.dart';
 import 'package:flutter_mqtt_app/app/mqtt_app.dart';
+import 'package:flutter_mqtt_app/app/utils/validator.dart';
 import 'package:flutter_mqtt_app/app/widgets/app_textfield.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -51,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: ElevatedButton.styleFrom(
                 elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.0)),
-                maximumSize: const Size(65, 40), //////// HERE
+                maximumSize: const Size(65, 40),
               ),
               onPressed: () => changeThemeMode(),
               child: Icon(isDarkMode(context) ? Icons.light_mode : Icons.dark_mode),
@@ -96,193 +99,205 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
             Expanded(
-                child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              color: Colors.grey,
-              child: SingleChildScrollView(
-                child: BlocBuilder<HomeCubit, HomeState>(
-                    buildWhen: (previous, current) => (current is InitialState ||
-                        current is NewMessageReceivedState ||
-                        current is ConnectedState ||
-                        current is DisconnectedState),
-                    builder: (context, state) {
-                      if (state is NewMessageReceivedState) {
-                        return Column(
-                          children: [
-                            ...(state).messages.map((msg) => MessageItemView(
-                                  message: msg.message,
-                                  topic: msg.topic,
-                                )),
-                          ],
-                        );
-                      } else {
-                        return const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text('No Message at this moment'),
-                        );
-                      }
-                    }),
-              ),
-            )),
-            BlocConsumer<HomeCubit, HomeState>(
-                listenWhen: (previous, current) =>
-                    current is ConnectedState ||
-                    current is DisconnectedState ||
-                    current is TopicSubscribed ||
-                    current is TopicUnSubscribed ||
-                    current is ErrorState,
-                listener: (context, state) {
-                  var message = '';
-                  var color = Colors.green;
-                  if (state is ConnectedState) {
-                    message = 'You are connected with the host';
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  } else if (state is DisconnectedState) {
-                    message = 'You are disconected with the host';
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  } else if (state is TopicSubscribed) {
-                    message = 'Subscribe is succesfully';
-                  } else if (state is TopicUnSubscribed) {
-                    message = 'Unsubscribe is succesfully';
-                  } else if (state is ErrorState) {
-                    message = state.error;
-                    color = Colors.red;
-                  }
-
-                  final snackBar = SnackBar(
-                    content: Text(message),
-                    backgroundColor: color,
-                    dismissDirection: DismissDirection.up,
-                    behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height - 50, left: 10, right: 10),
-                  );
-
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                },
-                buildWhen: (previous, current) => (current is InitialState ||
-                    current is ConnectingState ||
-                    current is ConnectedState ||
-                    current is DisconnectedState),
-                builder: (context, state) {
-                  return Column(
-                    children: [
-                      Form(
-                        key: formHostKey,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                color: Colors.grey,
+                child: SingleChildScrollView(
+                  child: BlocBuilder<HomeCubit, HomeState>(
+                      buildWhen: (previous, current) => (current is InitialState ||
+                          current is NewMessageReceivedState ||
+                          current is ConnectedState ||
+                          current is DisconnectedState),
+                      builder: (context, state) {
+                        if (state is NewMessageReceivedState) {
+                          return Column(
                             children: [
-                              Text(
-                                'Connection',
-                                style: Theme.of(context).textTheme.headlineMedium,
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      child: AppTextField(
-                                        hintText: 'Host (required)',
-                                        controller: hostController,
-                                        readOnly: state is ConnectedState || state is ConnectingState,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty || value.trim().isEmpty) {
-                                            return 'Please fill host field.';
-                                          }
-
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Container(
-                                    constraints: const BoxConstraints(minWidth: 60, maxWidth: 80),
-                                    child: AppTextField(
-                                      hintText: 'Port',
-                                      controller: portController,
-                                      readOnly: state is ConnectedState || state is ConnectingState,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: AppTextField(
-                                      hintText: 'Client Id',
-                                      controller: clientIdController,
-                                      readOnly: state is ConnectedState || state is ConnectingState,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  ElevatedButton(
-                                    onPressed: state is ConnectingState
-                                        ? null
-                                        : () {
-                                            final isValid = formHostKey.currentState!.validate();
-                                            if (!isValid) return;
-
-                                            (state is ConnectedState)
-                                                ? context.read<HomeCubit>().disconnectToBroker()
-                                                : context.read<HomeCubit>().connectToBroker(
-                                                      hostController.text,
-                                                      portController.text.isNotEmpty
-                                                          ? int.parse(portController.text)
-                                                          : null,
-                                                      clientIdController.text,
-                                                    );
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: state is ConnectedState ? Colors.red : Colors.green,
-                                    ),
-                                    child: (state is ConnectedState)
-                                        ? const Icon(Icons.link_off, color: Colors.white)
-                                        : (state is ConnectingState)
-                                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator())
-                                            : const Icon(Icons.link, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
+                              ...(state).messages.map((msg) => MessageItemView(
+                                    message: msg.message,
+                                    topic: msg.topic,
+                                  )),
                             ],
-                          ),
+                          );
+                        } else {
+                          return const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text('No Message at this moment'),
+                          );
+                        }
+                      }),
+                ),
+              ),
+            ),
+            BlocConsumer<HomeCubit, HomeState>(
+              listenWhen: (previous, current) =>
+                  current is ConnectedState ||
+                  current is DisconnectedState ||
+                  current is TopicSubscribedState ||
+                  current is TopicUnSubscribedState ||
+                  current is ErrorState,
+              listener: (context, state) {
+                var message = '';
+                var color = Colors.green;
+                if (state is ConnectedState) {
+                  message = 'You are connected with the host';
+                  FocusManager.instance.primaryFocus?.unfocus();
+                } else if (state is DisconnectedState) {
+                  message = 'You are disconected with the host';
+                  FocusManager.instance.primaryFocus?.unfocus();
+                } else if (state is TopicSubscribedState) {
+                  message = 'Subscription successful';
+                } else if (state is TopicUnSubscribedState) {
+                  message = 'Unsubscription successful';
+                } else if (state is ErrorState) {
+                  message = state.error;
+                  color = Colors.red;
+                }
+
+                _showSnackBar(message, color, context);
+              },
+              buildWhen: (previous, current) => (current is InitialState ||
+                  current is ConnectingState ||
+                  current is ConnectedState ||
+                  current is ConnectingFailState ||
+                  current is DisconnectedState),
+              builder: (context, state) {
+                return Column(
+                  children: [
+                    Form(
+                      key: formHostKey,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Connection',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    child: AppTextField(
+                                      hintText: 'Host (required)',
+                                      controller: hostController,
+                                      readOnly: state is ConnectedState || state is ConnectingState,
+                                      validator: Validator.hostValidation,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  ':',
+                                  style: Theme.of(context).textTheme.headlineLarge,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  constraints: const BoxConstraints(minWidth: 60, maxWidth: 80),
+                                  child: AppTextField(
+                                    hintText: '1883',
+                                    controller: portController,
+                                    readOnly: state is ConnectedState || state is ConnectingState,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AppTextField(
+                                    hintText: 'Client Id',
+                                    controller: clientIdController,
+                                    readOnly: state is ConnectedState || state is ConnectingState,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                ElevatedButton(
+                                  onPressed: state is ConnectingState
+                                      ? null
+                                      : () {
+                                          final isValid = formHostKey.currentState!.validate();
+                                          if (!isValid) return;
+
+                                          (state is ConnectedState)
+                                              ? context.read<HomeCubit>().disconnectToBroker()
+                                              : context.read<HomeCubit>().connectToBroker(
+                                                    hostController.text,
+                                                    portController.text.isNotEmpty
+                                                        ? int.parse(portController.text)
+                                                        : null,
+                                                    clientIdController.text,
+                                                  );
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: state is ConnectedState ? Colors.red : Colors.green,
+                                  ),
+                                  child: (state is ConnectedState)
+                                      ? const Icon(Icons.link_off, color: Colors.white)
+                                      : (state is ConnectingState)
+                                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator())
+                                          : const Icon(Icons.link, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
                       ),
-                      if (state is ConnectedState)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0, right: 8, left: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ElevatedButton(
-                                  onPressed: () => _openDialog(context),
-                                  child: const Text('Add new topic subscription')),
-                              const SizedBox(width: 16),
-                              ElevatedButton(
-                                  onPressed: () => _openTopicsBottomSheet(context, context.read<HomeCubit>().topics),
-                                  child: const Icon(Icons.list)),
-                            ],
-                          ),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 500),
+                      child: Container(
+                        padding: const EdgeInsets.only(bottom: 8.0, right: 8, left: 8),
+                        height: state is ConnectedState ? null : 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _openDialog(context),
+                              child: const Text('Add new topic subscription'),
+                            ),
+                            const SizedBox(width: 16),
+                            ElevatedButton(
+                                onPressed: () => _openTopicsBottomSheet(context, context.read<HomeCubit>().topics),
+                                child: const Icon(Icons.list)),
+                          ],
                         ),
-                    ],
-                  );
-                }),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
+  void _showSnackBar(String message, MaterialColor color, BuildContext context) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: color,
+      dismissDirection: DismissDirection.up,
+      behavior: SnackBarBehavior.floating,
+      margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height - 50, left: 10, right: 10),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   Future<void> _openDialog(BuildContext context) async {
     final topic = await showDialog<String?>(
       context: context,
       builder: (BuildContext context) {
-        return AddTopicSubscribeDialog();
+        return AddTopicSubscribeDialog(
+          currentTopics: cubit.topics,
+        );
       },
     );
 

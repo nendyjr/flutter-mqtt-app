@@ -27,7 +27,7 @@ class ListTopicSubscribedSheet extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).pop();
                     },
-                    child: Icon(
+                    child: const Icon(
                       Icons.close,
                       size: 24,
                     ),
@@ -38,45 +38,70 @@ class ListTopicSubscribedSheet extends StatelessWidget {
             Container(
               height: 1,
               color: Colors.black,
-              margin: EdgeInsets.only(bottom: 8),
+              margin: const EdgeInsets.only(bottom: 8),
             ),
-            ...topics.map((topic) => Container(
-                  margin: EdgeInsets.all(8),
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8)),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    ...topics.map(
+                      (topic) => TopicItemView(
+                        topic: topic,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(topic)),
-                      IconButton(
-                          onPressed: () async {
-                            final topicWilldelete = await showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return UnsubscribeConfirmationDialog(
-                                  topic: topic,
-                                );
-                              },
-                            );
-
-                            if (topicWilldelete == null || topicWilldelete.isEmpty) return;
-
-                            Navigator.of(context).pop(topicWilldelete);
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            color: Colors.red,
-                          ))
-                    ],
-                  ),
-                ))
+                    )
+                  ],
+                ),
+              ),
+            )
           ],
         ),
+      ),
+    );
+  }
+}
+
+class TopicItemView extends StatelessWidget {
+  const TopicItemView({
+    super.key,
+    required this.topic,
+  });
+  final String topic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(topic)),
+          IconButton(
+              onPressed: () async {
+                final topicWilldelete = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return UnsubscribeConfirmationDialog(
+                      topic: topic,
+                    );
+                  },
+                );
+
+                if (topicWilldelete == null || topicWilldelete.isEmpty) return;
+
+                Navigator.of(context).pop(topicWilldelete);
+              },
+              icon: const Icon(
+                Icons.close,
+                color: Colors.red,
+              ))
+        ],
       ),
     );
   }
@@ -113,12 +138,12 @@ class UnsubscribeConfirmationDialog extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: Text('Cancel')),
+                    child: const Text('Cancel')),
                 TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(topic);
                     },
-                    child: Text('Yes')),
+                    child: const Text('Yes')),
               ],
             ),
           ],

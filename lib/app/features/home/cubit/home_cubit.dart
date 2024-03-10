@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_mqtt_app/app/domain/mqtt_usecase.dart';
+import 'package:flutter_mqtt_app/app/core/client_connect.dart';
 import 'package:flutter_mqtt_app/app/features/home/models/Receive_message.dart';
 import 'package:flutter_mqtt_app/app/features/home/state/home_state.dart';
 import 'package:mqtt_client/mqtt_client.dart';
@@ -26,6 +26,8 @@ class HomeCubit extends Cubit<HomeState> {
       onSubscribed: onSubscribed,
       onSubscribeFail: onSubscribeFail,
       onUnsubscribed: onUnsubscribed,
+      onAutoReconnect: onAutoReconnect,
+      onConnectionFail: onConnectionFail,
     );
     emit(ConnectingState());
     await client!.connect();
@@ -39,40 +41,30 @@ class HomeCubit extends Cubit<HomeState> {
     assert(topic.isNotEmpty);
     assert(client != null);
 
-    final sub = client?.subscribeNewTopic(topic);
-    if (sub == null) return;
+    emit(TopicSubscribeState());
 
-    // topics.add(sub.topic.rawTopic);
-
-    // client?.publishMessageToTopic();
+    client?.subscribeNewTopic(topic);
   }
 
   void onSubscribed(String topic) {
-    print('EXAMPLE::Subscription confirmed for topic $topic');
     topics.add(topic);
 
-    emit(TopicSubscribed());
+    emit(TopicSubscribedState());
   }
 
   void onSubscribeFail(String topic) {
-    print('EXAMPLE::Subscription failed for topic $topic');
     emit(ErrorState(error: 'Subscribe failed'));
   }
 
   void onUnsubscribed(String? topic) {
-    print('EXAMPLE::Unsubscription confirmed for topic $topic');
     topics.remove(topic);
-    emit(TopicUnSubscribed());
+    emit(TopicUnSubscribedState());
   }
 
-  /// The unsolicited disconnect callback
   void onDisconnected() {
-    print('EXAMPLE::OnDisconnected client callback - Client disconnection');
     if (client?.client.connectionStatus!.disconnectionOrigin == MqttDisconnectionOrigin.solicited) {
-      print('EXAMPLE::OnDisconnected callback is solicited, this is correct');
       emit(DisconnectedState());
     } else {
-      print('EXAMPLE::OnDisconnected callback is unsolicited or none, this is incorrect - exiting');
       emit(ErrorState(error: 'You are disconected from the host'));
     }
 
@@ -81,36 +73,35 @@ class HomeCubit extends Cubit<HomeState> {
     topics.clear();
   }
 
+  void onConnectionFail(String error) {
+    emit(ConnectingFailState());
+    emit(ErrorState(error: error));
+  }
+
   void unsubscribedTopic(String topic) {
+    emit(TopicUnSubscribeState());
     client?.unsubscribeTopic(topic);
   }
 
-  /// The successful connect callback
   void onConnected() {
-    print('EXAMPLE::OnConnected client callback - Client connection was successful');
     messages.clear();
     topics.clear();
 
     emit(ConnectedState());
   }
 
-  void onListen(List<MqttReceivedMessage<MqttMessage?>>? c) {
+  void onAutoReconnect() {}
+
+  void onListen(List<MqttReceivedMessage<MqttMessage?>>? msgs) {
+    if (msgs == null) return;
     emit(NewMessageReceivingState(messages: messages));
-    final recMess = c![0].payload as MqttPublishMessage;
-    for (final msg in c) {
+
+    for (final msg in msgs) {
       final mqttMsg = msg.payload as MqttPublishMessage;
       final realMsg = MqttPublishPayload.bytesToStringAsString(mqttMsg.payload.message);
-      messages.add(ReceiveMessage(message: realMsg, topic: msg.topic));
+      messages.insert(0, ReceiveMessage(message: realMsg, topic: msg.topic));
     }
-    final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-    emit(NewMessageReceivedState(messages: messages));
 
-    /// The above may seem a little convoluted for users only interested in the
-    /// payload, some users however may be interested in the received publish message,
-    /// lets not constrain ourselves yet until the package has been in the wild
-    /// for a while.
-    /// The payload is a byte buffer, this will be specific to the topic
-    print('EXAMPLE::Change notification:: topic is <${c[0].topic}>, payload is <-- $pt -->');
-    print('');
+    emit(NewMessageReceivedState(messages: messages));
   }
 }

@@ -29,6 +29,11 @@ class ConnectingState extends HomeState {
   List<Object?> get props => [];
 }
 
+class ConnectingFailState extends HomeState {
+  @override
+  List<Object?> get props => [];
+}
+
 class ConnectedState extends HomeState {
   @override
   List<Object?> get props => [];
@@ -63,22 +68,22 @@ class ErrorState extends HomeState {
   List<Object?> get props => [];
 }
 
-class TopicSubscribed extends HomeState {
+class TopicSubscribedState extends HomeState {
   @override
   List<Object?> get props => [];
 }
 
-class TopicSubscribe extends HomeState {
+class TopicSubscribeState extends HomeState {
   @override
   List<Object?> get props => [];
 }
 
-class TopicUnSubscribe extends HomeState {
+class TopicUnSubscribeState extends HomeState {
   @override
   List<Object?> get props => [];
 }
 
-class TopicUnSubscribed extends HomeState {
+class TopicUnSubscribedState extends HomeState {
   @override
   List<Object?> get props => [];
 }

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_mqtt_app/app/utils/validator.dart';
 import 'package:flutter_mqtt_app/app/widgets/app_textfield.dart';
 
 class AddTopicSubscribeDialog extends StatelessWidget {
+  AddTopicSubscribeDialog({super.key, required this.currentTopics});
   final textController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+  final List<String> currentTopics;
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -27,13 +31,7 @@ class AddTopicSubscribeDialog extends StatelessWidget {
                 child: AppTextField(
                   hintText: 'Topic',
                   controller: textController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.trim().isEmpty) {
-                      return 'Topic tidak boleh kosong.';
-                    }
-
-                    return null;
-                  },
+                  validator: (value) => Validator.topicValidation(value, currentTopics),
                 ),
               ),
             ),
@@ -44,15 +42,19 @@ class AddTopicSubscribeDialog extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: Text('Cancel')),
-                TextButton(
+                    child: Text('CANCEL', style: Theme.of(context).textTheme.bodyMedium)),
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                     onPressed: () {
                       final isValid = formKey.currentState!.validate();
                       if (!isValid) return;
 
                       Navigator.of(context).pop(textController.text);
                     },
-                    child: Text('Add')),
+                    child: Text(
+                      'ADD',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+                    )),
               ],
             ),
           ],
