@@ -6,7 +6,7 @@ A new Flutter project.
 
 **Step 0:**
 
-Install Flutter
+Install Flutter version 3.16.9.
 * [Install Flutter](https://flutter.dev/get-started/)
 
 **Step 1:**
@@ -44,3 +44,12 @@ Run the App
 ```
 flutter run
 ```
+
+## Recommendation version
+
+[✓] Flutter (Channel stable, 3.16.9, on macOS 14.3 23D56 darwin-arm64, locale en-ID)
+[✓] Android toolchain - develop for Android devices (Android SDK version 33.0.0)
+[✓] Xcode - develop for iOS and macOS (Xcode 15.2)
+[✓] Chrome - develop for the web
+[✓] Android Studio (version 2023.1)
+[✓] VS Code (version 1.87.0)
