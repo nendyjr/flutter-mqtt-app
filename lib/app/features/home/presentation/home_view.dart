@@ -132,6 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
               listenWhen: (previous, current) =>
                   current is ConnectedState ||
                   current is DisconnectedState ||
+                  current is DisconnectedUnsolicitedState ||
                   current is TopicSubscribedState ||
                   current is TopicUnSubscribedState ||
                   current is ErrorState,
@@ -143,6 +144,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   FocusManager.instance.primaryFocus?.unfocus();
                 } else if (state is DisconnectedState) {
                   message = 'You are disconected with the host';
+                  FocusManager.instance.primaryFocus?.unfocus();
+                } else if (state is DisconnectedUnsolicitedState) {
+                  message = 'You are disconected with the host';
+                  color = Colors.red;
                   FocusManager.instance.primaryFocus?.unfocus();
                 } else if (state is TopicSubscribedState) {
                   message = 'Subscription successful';
@@ -159,6 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   current is ConnectingState ||
                   current is ConnectedState ||
                   current is ConnectingFailState ||
+                  current is DisconnectedUnsolicitedState ||
                   current is DisconnectedState),
               builder: (context, state) {
                 return Column(
@@ -339,22 +345,24 @@ class MessageItemView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text('Message : $message'),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text('Topic : $topic'),
-        ),
-        const SizedBox(height: 4),
-        Container(height: 1, color: Colors.black),
-        const SizedBox(height: 4),
-      ],
+    return Container(
+      decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(8)),
+      margin: const EdgeInsets.all(4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text('Message : $message'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text('Topic : $topic'),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
     );
   }
 }

@@ -43,7 +43,7 @@ class ClientConnect {
     client
       ..logging(on: true)
       ..setProtocolV311()
-      ..keepAlivePeriod = 20
+      ..keepAlivePeriod = 60
       ..connectTimeoutPeriod = 2000 // milliseconds
       ..onDisconnected = onDisconnected
       ..onAutoReconnect = onAutoReconnect

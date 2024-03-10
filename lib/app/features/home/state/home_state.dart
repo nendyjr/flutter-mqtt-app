@@ -24,6 +24,11 @@ class DisconnectedState extends HomeState {
   List<Object?> get props => [];
 }
 
+class DisconnectedUnsolicitedState extends HomeState {
+  @override
+  List<Object?> get props => [];
+}
+
 class ConnectingState extends HomeState {
   @override
   List<Object?> get props => [];

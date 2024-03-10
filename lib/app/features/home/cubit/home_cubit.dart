@@ -65,7 +65,7 @@ class HomeCubit extends Cubit<HomeState> {
     if (client?.client.connectionStatus!.disconnectionOrigin == MqttDisconnectionOrigin.solicited) {
       emit(DisconnectedState());
     } else {
-      emit(ErrorState(error: 'You are disconected from the host'));
+      emit(DisconnectedUnsolicitedState());
     }
 
     client = null;
