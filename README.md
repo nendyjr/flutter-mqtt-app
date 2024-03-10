@@ -2,15 +2,45 @@
 
 A new Flutter project.
 
-## Getting Started
+## How to run
 
-This project is a starting point for a Flutter application.
+**Step 0:**
 
-A few resources to get you started if this is your first Flutter project:
+Install Flutter
+* [Install Flutter](https://flutter.dev/get-started/)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**Step 1:**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Download or clone the repo from Github : https://github.com/nendyjr/flutter-mqtt-app.git
+
+**Step 2:**
+
+Go to project root and execute the following command in console to get the required dependencies: 
+
+```
+flutter pub get 
+```
+
+**Step 3:**
+
+Run iOS or Android Emulator
+
+Show all registered eimulator
+```
+flutter emulator
+```
+
+For run the emulator please use this 
+```
+flutter emulators --launch <emulator id>
+```
+
+For example open iOS Emulator
+```
+flutter emulator --launch apple_ios_simulator
+```
+
+Run the App 
+```
+flutter run
+```
