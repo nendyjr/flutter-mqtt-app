@@ -32,7 +32,7 @@ flutter emulator
 
 For run the emulator please use this 
 ```
-flutter emulators --launch <emulator id>
+flutter emulators --launch <emulator_id>
 ```
 
 For example open iOS Emulator
